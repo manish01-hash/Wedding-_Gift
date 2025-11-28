@@ -1,75 +1,71 @@
-import {
-  isRouteErrorResponse,
-  Links,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-} from "react-router";
-
-import type { Route } from "./+types/root";
-import "./app.css";
-
-export const links: Route.LinksFunction = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
-  },
-];
+import { useState, useEffect } from "react";
+import { Outlet, useNavigation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { LoadingScreen } from "./components/LoadingScreen";
+import { Navigation } from "./components/Navigation";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        {children}
-        <ScrollRestoration />
-        <Scripts />
-      </body>
-    </html>
+    <div className="bg-gray-50 text-gray-900 font-sans antialiased min-h-screen">
+      {children}
+    </div>
   );
 }
 
-export default function App() {
-  return <Outlet />;
-}
+export default function Root() {
+  const [isLoading, setIsLoading] = useState(true);
+  const navigation = useNavigation();
 
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
-  let stack: string | undefined;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
 
-  if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Show loading screen for initial load
+  if (isLoading) {
+    return (
+      <Layout>
+        <LoadingScreen />
+      </Layout>
+    );
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
+    <Layout>
+      <Navigation />
+      <AnimatePresence mode="wait">
+        <motion.main
+          key={navigation.location?.pathname}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+          className="flex-1"
+        >
+          <Outlet />
+        </motion.main>
+      </AnimatePresence>
+    </Layout>
+  );
+}
+
+export function ErrorBoundary() {
+  return (
+    <Layout>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">Something went wrong</h1>
+          <p className="text-xl mb-4">
+            An unexpected error has occurred. Please try again later.
+          </p>
+          <a href="/" className="text-blue-600 hover:underline">
+            Go back home
+          </a>
+        </div>
+      </div>
+    </Layout>
   );
 }

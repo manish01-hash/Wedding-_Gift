@@ -1,7 +1,4 @@
-import type { Config } from "@react-router/dev/config";
+// Legacy React Router dev config left here for reference.
+// It is no longer used by the Vite + react-router-dom setup.
 
-export default {
-  // Config options...
-  // Server-side render by default, to enable SPA mode set this to `false`
-  ssr: true,
-} satisfies Config;
+export default {};
